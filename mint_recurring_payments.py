@@ -5,10 +5,16 @@ from _pydecimal import Decimal
 
 FORMAT_STR = "\"Date\",\"Description\",\"Original Description\",\"Amount\",\"Transaction Type\",\"Category\",\"Account Name\",\"Labels\",\"Notes\""
 
+IS_VERBOSE = False
+
 
 # print an error
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
+def vprint(*args, **kwargs):
+    if(IS_VERBOSE):
+        print(*args, **kwargs)
 
 
 # reads the CSV to a array and returns it
@@ -20,12 +26,12 @@ def read_csv_to_array(filename, delimiter, quotechar):
             for row in csvreader:
                 data.append(row)
 
-            print("Done reading CSV")
-            print("lines: " + repr(len(data)))
+            vprint("Done reading CSV")
+            vprint("lines: " + repr(len(data)))
             return data
     except:
-        eprint("Failed to parse CSV file")
-        eprint("Make sure file exists and is in format: " + FORMAT_STR)
+        vprint("Failed to parse CSV file")
+        vprint("Make sure file exists and is in format: " + FORMAT_STR)
         sys.exit(1)
 
 
@@ -38,7 +44,8 @@ def filter_array(data):
 def build_dict(data):
     my_dict = {}
     for row in data:
-        key = row[1] + " " + row[2]
+        # key = row[1] + " " + row[2]
+        key = row[1]
         try:
             existing_data = my_dict[key]
 
@@ -100,8 +107,16 @@ def compute_times_per_month_for_dict(my_dict):
 
 
 
+def print_dict(my_dict):
+    print("Name,Transactions Per Month, Average Amount, Count, Earliest Transaction, Latest Transaction")
+    for row in my_dict:
+        key = row[0]
+        value = row[1]
 
+        avg = value["average_amount"]
+        avg = "{:0.2f}".format(avg)
 
+        print(key + "," + repr(value["transactions_per_month"]) + "," + avg + "," + repr(value["count"]) + "," + value["earliest_transaction"] + "," +value["latest_transaction"])
 
 
 if __name__ == "__main__":
@@ -113,18 +128,28 @@ if __name__ == "__main__":
                         help="specify the CSV delimiter (default: ,)")
     parser.add_argument("-q", "--quotechar", type=str, default="\"",
                         help="specify the CSV quotechar (default: \")")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="show verbose messages")
     args = parser.parse_args()
+
+    if(args.verbose):
+        IS_VERBOSE=True
 
     data = read_csv_to_array(args.file_name, args.delimiter, args.quotechar)
     data = filter_array(data)
-    print("Filtered length: " + repr(len(data)))
+    vprint("Filtered length: " + repr(len(data)))
 
     dict_data = build_dict(data)
-    print("Pre filtered length: " + repr(len(dict_data.items())))
+    vprint("Pre filtered length: " + repr(len(dict_data.items())))
 
     dict_data = compute_times_per_month_for_dict(dict_data)
 
-    print("Final length: " + repr(len(dict_data.items())))
+    vprint("Final length: " + repr(len(dict_data.items())))
+
+    # sort by value
+    dict_data = sorted(dict_data.items(), key=lambda kv: abs(1-kv[1]["transactions_per_month"]))
+    print_dict(dict_data)
+
 
 
 
