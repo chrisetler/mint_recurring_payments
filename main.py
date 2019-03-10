@@ -70,6 +70,33 @@ def build_dict(data):
     return my_dict
 
 
+def compute_times_per_month_for_dict(my_dict):
+    for key, value in my_dict.items():
+        try:
+            start_date = value["earliest_transaction"]
+            end_date = value["latest_transaction"]
+
+            start_year = int(start_date.split("/")[2])
+            end_year = int(end_date.split("/")[2])
+
+            start_month = int(start_date.split("/")[0])
+            end_month = int(end_date.split("/")[0])
+
+            month_diff= (end_month + 12*end_year) - (start_month + 12*start_year)
+
+            transactions_per_month = value["count"] / month_diff
+
+            my_dict[key]["transactions_per_month"] = transactions_per_month
+        except:
+            my_dict[key]["transactions_per_month"] = "NA"
+
+
+    return my_dict
+
+
+
+
+
 
 
 if __name__ == "__main__":
@@ -88,5 +115,7 @@ if __name__ == "__main__":
     print("Filtered length: " + repr(len(data)))
 
     dict_data = build_dict(data)
+    dict_data = compute_times_per_month_for_dict(dict_data)
+
 
 
